@@ -1,176 +1,208 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub Pro - Platform Workshop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --sidebar-bg: #1e293b; --sidebar-hover: #334155; --primary: #3b82f6; --bg: #f8fafc; --text: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); margin: 0; color: var(--text); }
+        
+        /* HEADER & HERO */
+        .landing-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 50px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
+        .logo { font-weight: 800; font-size: 22px; color: var(--primary); letter-spacing: -1px; }
+        .hero { text-align: center; padding: 80px 20px; background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); }
+        .hero h1 { font-size: 40px; font-weight: 800; margin-bottom: 15px; }
 
-    <title>Pendaftaran Event Firebase</title>
+        /* SIDEBAR */
+        .sidebar { width: 260px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; }
+        .sidebar-header { padding: 30px 20px; font-size: 16px; font-weight: 800; border-bottom: 1px solid #334155; text-transform: uppercase; }
+        .sidebar-menu { flex: 1; padding: 20px 0; }
+        .menu-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; transition: 0.3s; color: #cbd5e1; font-size: 14px; text-decoration: none; }
+        .menu-item:hover { background: var(--sidebar-hover); color: white; }
+        .menu-item.active { background: var(--primary); color: white; border-right: 4px solid #fff; }
 
-    <link rel="stylesheet" href="style.css">
+        /* MAIN CONTENT */
+        .main-content { margin-left: 260px; flex: 1; padding: 40px; min-height: 100vh; }
+        .content-card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        
+        /* UI ELEMENTS */
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
+        button { padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; font-size: 14px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-ghost { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .btn-pay { background: #10b981; color: white; }
+        .btn-cancel { background: white; color: #ef4444; border: 1px solid #ef4444; }
+        .btn-logout { background: #ef4444; color: white; width: 100%; margin-top: 10px; }
+
+        /* MODAL */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
+
+        /* CARDS */
+        .grid-event { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
+        .event-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; }
+        .event-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .event-img { width: 100%; height: 160px; object-fit: cover; }
+        .event-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+        
+        .badge { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        
+        .hidden { display: none !important; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px; background: #f8fafc; font-size: 12px; color: #64748b; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    </style>
 </head>
-
 <body>
 
-    <div class="container">
-
-        <!-- ==============================
-             FORM PENDAFTARAN
-             ============================== -->
-
-        <div class="card">
-
-            <h1>Pendaftaran Event</h1>
-
-            <p>
-                Silakan isi data untuk mengikuti event.
-            </p>
-
-            <form id="registrationForm">
-
-                <div class="form-group">
-
-                    <label for="name">
-                        Nama Lengkap
-                    </label>
-
-                    <input
-                        type="text"
-                        id="name"
-                        placeholder="Masukkan nama lengkap"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="email">
-                        Email
-                    </label>
-
-                    <input
-                        type="email"
-                        id="email"
-                        placeholder="contoh@email.com"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="phone">
-                        Nomor HP
-                    </label>
-
-                    <input
-                        type="text"
-                        id="phone"
-                        placeholder="08xxxxxxxxxx"
-                        required
-                    >
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="event">
-                        Pilih Event
-                    </label>
-
-                    <select id="event" required>
-
-                        <option value="">
-                            -- Pilih Event --
-                        </option>
-
-                        <option value="Workshop Firebase">
-                            Workshop Firebase
-                        </option>
-
-                        <option value="Web Development">
-                            Web Development
-                        </option>
-
-                        <option value="UI/UX Design">
-                            UI/UX Design
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <button type="submit">
-                    Daftar Sekarang
-                </button>
-
-            </form>
-
-        </div>
-
-
-
-        <!-- ==============================
-             DAFTAR PESERTA
-             ============================== -->
-
-        <div class="participant-section">
-
-            <h2>Daftar Peserta</h2>
-
-            <div class="table-container">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>No</th>
-
-                            <th>Nama</th>
-
-                            <th>Email</th>
-
-                            <th>No. HP</th>
-
-                            <th>Event</th>
-
-                            <th>Aksi</th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody id="participantList">
-
-                        <!-- Data Firestore akan muncul di sini -->
-
-                    </tbody>
-
-                </table>
-
+    <!-- LANDING PAGE -->
+    <div id="section-landing" class="full-page" style="background: white; overflow-y: auto; position: fixed; width: 100%; height: 100%; z-index: 500;">
+        <header class="landing-header">
+            <div class="logo">EVENT<span>HUB</span></div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" onclick="goToAuth('user')">Masuk Peserta</button>
+                <button class="btn-ghost" onclick="goToAuth('admin')">Portal Admin</button>
             </div>
-
-        </div>
-
+        </header>
+        <section class="hero">
+            <h1>Selamat Datang Calon Peserta</h1>
+            <p>Pilih workshop terbaik untuk meningkatkan karir Anda.</p>
+        </section>
+        <div class="grid-event" id="container-spoiler-event" style="padding: 40px 50px;"></div>
     </div>
 
+    <!-- MODAL DETAIL WORKSHOP -->
+    <div id="modal-event-detail" class="modal hidden">
+        <div class="modal-content">
+            <img id="det-img" src="" style="width:100%; height:180px; object-fit:cover; border-radius:12px;">
+            <h2 id="det-title" style="margin: 15px 0 5px 0;"></h2>
+            <span id="det-status" class="badge badge-blue"></span>
+            <div style="margin: 15px 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                <p>📍 Lokasi: <strong id="det-loc"></strong></p>
+                <p>📅 Waktu: <strong id="det-time"></strong></p>
+                <p>💰 Harga: <strong id="det-price" style="color:var(--primary)"></strong></p>
+                <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+                <strong>Deskripsi Kegiatan:</strong>
+                <p id="det-desc" style="color: #1e293b; margin-top:5px;"></p>
+            </div>
+            <button id="det-btn-daftar" class="btn-primary" style="width:100%;">Daftar Sekarang</button>
+            <button class="btn-ghost" style="width:100%; margin-top:10px;" onclick="closeModal('modal-event-detail')">Tutup</button>
+        </div>
+    </div>
 
+    <!-- SIDEBAR -->
+    <aside class="sidebar hidden" id="main-sidebar">
+        <div class="sidebar-header" id="sidebar-title">WELCOME</div>
+        <nav class="sidebar-menu">
+            <div id="menu-user-only">
+                <div class="menu-item active" onclick="changeMenu(this, 'section-pilih-event')">📅 Daftar Event</div>
+                <div class="menu-item" onclick="changeMenu(this, 'section-pendaftaran-saya')">📝 Pendaftaran Saya</div>
+                <div class="menu-item" onclick="changeMenu(this, 'section-profil')">👤 Profil Saya</div>
+            </div>
+            <div id="menu-admin-only" class="hidden">
+                <div class="menu-item active" onclick="changeMenu(this, 'section-admin-panel')">📊 Monitoring Peserta</div>
+                <div class="menu-item" onclick="changeMenu(this, 'section-list-event-admin')">⚙️ Kelola Event</div>
+                <div class="menu-item" onclick="changeMenu(this, 'section-tambah-event')">➕ Tambah Event</div>
+            </div>
+        </nav>
+        <div class="sidebar-footer"><button class="btn-logout" onclick="logout()">Logout</button></div>
+    </aside>
 
-    <!-- Firebase + JavaScript -->
+    <!-- MAIN CONTENT -->
+    <main class="main-content hidden" id="main-content-area">
+        <section id="section-pilih-event" class="content-section">
+            <h2>Pilih Workshop Anda</h2>
+            <div class="grid-event" id="container-event-peserta"></div>
+        </section>
 
-    <script
-        type="module"
-        src="script.js">
-    </script>
+        <!-- Form Pendaftaran -->
+        <section id="section-form-daftar" class="content-section hidden">
+            <h2 id="form-title">Pendaftaran</h2>
+            <div class="content-card" style="max-width: 500px;">
+                <input type="hidden" id="selected-event">
+                <label>Nama Lengkap</label><input type="text" id="reg-nama">
+                <label>WhatsApp</label><input type="number" id="reg-nohp">
+                <label>Instansi</label><input type="text" id="reg-instansi">
+                <button class="btn-primary" onclick="simpanPendaftaran()">Konfirmasi Pendaftaran</button>
+            </div>
+        </section>
 
+        <!-- Pendaftaran Saya -->
+        <section id="section-pendaftaran-saya" class="content-section hidden">
+            <h2>Pendaftaran Saya</h2>
+            <div id="list-pendaftaran-saya"></div>
+        </section>
+
+        <!-- Profil -->
+        <section id="section-profil" class="content-section hidden">
+            <h2>Profil Saya</h2>
+            <div class="content-card" style="max-width: 500px;">
+                <label>Nama</label><input type="text" id="prof-nama">
+                <label>WhatsApp</label><input type="number" id="prof-nohp">
+                <label>Instansi</label><input type="text" id="prof-instansi">
+                <button class="btn-primary" onclick="simpanProfil()">Simpan Profil</button>
+            </div>
+        </section>
+
+        <!-- Admin: Monitoring -->
+        <section id="section-admin-panel" class="content-section hidden">
+            <h2>Data Pendaftar</h2>
+            <div class="content-card">
+                <table>
+                    <thead><tr><th>Nama</th><th>Status</th><th>Bukti</th><th>Event</th><th>Aksi</th></tr></thead>
+                    <tbody id="admin-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Admin: Tambah Event -->
+        <section id="section-tambah-event" class="content-section hidden">
+            <h2 id="admin-form-title">Tambah Workshop</h2>
+            <div class="content-card" style="max-width: 600px;">
+                <input type="hidden" id="edit-event-id">
+                <label>Judul Event</label><input type="text" id="ev-title">
+                <label>Kuota</label><input type="number" id="ev-quota">
+                <label>Harga (IDR)</label><input type="number" id="ev-price">
+                <label>Thumbnail URL</label><input type="text" id="ev-thumb">
+                <label>Lokasi</label><input type="text" id="ev-loc">
+                <label>Waktu</label><input type="text" id="ev-time">
+                <label>Deskripsi Workshop</label><textarea id="ev-desc" rows="4"></textarea>
+                <button class="btn-primary" onclick="simpanEventBaru()">Publikasikan</button>
+            </div>
+        </section>
+
+        <section id="section-list-event-admin" class="content-section hidden">
+            <h2>Kelola Workshop</h2>
+            <div id="admin-event-list-container"></div>
+        </section>
+    </main>
+
+    <!-- MODAL AUTH -->
+    <div id="modal-auth" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <h2 id="auth-title">Masuk</h2>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button id="btn-action-auth" class="btn-primary" style="width:100%;">Login</button>
+            <p id="toggle-auth" style="text-align:center; cursor:pointer; color: var(--primary); font-size: 13px; margin-top: 15px;"></p>
+            <button class="btn-ghost" style="width:100%; margin-top: 10px;" onclick="closeModal('modal-auth')">Batal</button>
+        </div>
+    </div>
+
+    <!-- MODAL PAYMENT -->
+    <div id="modal-payment" class="modal hidden">
+        <div class="modal-content">
+            <h3>Konfirmasi Pembayaran</h3>
+            <p>BCA: 123-456-7890 (A/N Admin)</p>
+            <input type="text" id="pay-sender-name" placeholder="Nama Pengirim">
+            <input type="hidden" id="pay-reg-id">
+            <button class="btn-primary" onclick="konfirmasiPembayaran()" style="width: 100%;">Kirim Bukti</button>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
 </body>
-
 </html>
