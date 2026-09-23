@@ -6,7 +6,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyB81v9_WEA5ROouGXhpDAaedurUkp5MA88",
     authDomain: "workshop-pendaftaran-event.firebaseapp.com",
     projectId: "workshop-pendaftaran-event",
-    storageBucket: "workshop-pendaftaran-event.firebasestorage.app",
+    storageBucket: "workshop-pendaftaran-event.appspot.com",
     messagingSenderId: "31982803636",
     appId: "1:31982803636:web:54c4fa0d565b5a72bbd5e1"
 };
@@ -17,10 +17,10 @@ const db = getFirestore(app);
 
 let isLoginMode = true;
 
-// INIT LOAD
+// INIT LOAD SPOILER EVENT
 listenAllEvents();
 
-// --- NAVIGATION ---
+// --- NAVIGATION & AUTH ---
 window.goToAuth = (role) => {
     localStorage.setItem('pintuRole', role);
     document.getElementById('modal-auth').classList.remove('hidden');
@@ -28,14 +28,17 @@ window.goToAuth = (role) => {
     updateAuthUI();
 };
 
-window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+window.closeModal = (id) => {
+    document.getElementById(id).classList.add('hidden');
+};
 
 function updateAuthUI() {
     const role = localStorage.getItem('pintuRole');
     const title = document.getElementById('auth-title');
     const toggle = document.getElementById('toggle-auth');
     if(role === 'admin') {
-        title.innerText = "Login Admin"; toggle.classList.add('hidden');
+        title.innerText = "Login Admin"; 
+        toggle.classList.add('hidden');
     } else {
         title.innerText = isLoginMode ? "Login Peserta" : "Daftar Akun Baru";
         toggle.classList.remove('hidden');
@@ -43,13 +46,17 @@ function updateAuthUI() {
     }
 }
 
-document.getElementById('toggle-auth').onclick = () => { isLoginMode = !isLoginMode; updateAuthUI(); };
+document.getElementById('toggle-auth').onclick = () => { 
+    isLoginMode = !isLoginMode; 
+    updateAuthUI(); 
+};
 
 document.getElementById('btn-action-auth').onclick = async () => {
     const email = document.getElementById('email').value, pass = document.getElementById('password').value;
+    const role = localStorage.getItem('pintuRole');
     try {
-        if(localStorage.getItem('pintuRole') === 'admin' && email !== "fauzan12@gmail.com") throw new Error("Akses Ditolak!");
-        if(isLoginMode || localStorage.getItem('pintuRole') === 'admin') await signInWithEmailAndPassword(auth, email, pass);
+        if(role === 'admin' && email !== "fauzan13@gmail.com") throw new Error("Akses Ditolak!");
+        if(isLoginMode || role === 'admin') await signInWithEmailAndPassword(auth, email, pass);
         else await createUserWithEmailAndPassword(auth, email, pass);
     } catch (e) {
         alert(e.code === 'auth/invalid-credential' ? "Akun tidak ditemukan, silakan daftar." : e.message);
@@ -64,12 +71,17 @@ onAuthStateChanged(auth, (user) => {
         document.getElementById('main-content-area').classList.remove('hidden');
         const role = localStorage.getItem('pintuRole');
         document.getElementById('sidebar-title').innerText = "WELCOME " + role.toUpperCase();
+        
         if(role === 'admin') {
-            showSection('section-admin-panel'); listenAdminData(); listenAdminEventList();
+            showSection('section-admin-panel'); 
+            listenAdminData(); 
+            listenAdminEventList();
             document.getElementById('menu-admin-only').classList.remove('hidden');
             document.getElementById('menu-user-only').classList.add('hidden');
         } else {
-            showSection('section-pilih-event'); loadUserProfile(user.uid); listenMyRegistration(user.uid);
+            showSection('section-pilih-event'); 
+            loadUserProfile(user.uid); 
+            listenMyRegistration(user.uid);
             document.getElementById('menu-admin-only').classList.add('hidden');
             document.getElementById('menu-user-only').classList.remove('hidden');
         }
@@ -82,7 +94,8 @@ function listenAllEvents() {
         const containers = [document.getElementById('container-spoiler-event'), document.getElementById('container-event-peserta')];
         let html = "";
         snap.forEach(d => {
-            const ev = d.data(); const isH = ev.currentQuota <= 0 || ev.status === 'selesai';
+            const ev = d.data(); 
+            const isH = ev.currentQuota <= 0 || ev.status === 'selesai';
             html += `
                 <div class="event-card" style="opacity:${ev.status === 'selesai' ? '0.6' : '1'}">
                     <img src="${ev.thumb}" class="event-img">
@@ -123,8 +136,13 @@ window.openDetailModal = async (id) => {
 };
 
 window.handleDaftarClick = (title) => {
-    if(!auth.currentUser) { alert("Silakan login!"); goToAuth('user'); }
-    else { document.getElementById('selected-event').value = title; showSection('section-form-daftar'); }
+    if(!auth.currentUser) { 
+        alert("Silakan login terlebih dahulu!"); 
+        goToAuth('user'); 
+    } else { 
+        document.getElementById('selected-event').value = title; 
+        showSection('section-form-daftar'); 
+    }
 };
 
 // --- SIMPAN EVENT (ADMIN) ---
@@ -140,24 +158,31 @@ window.simpanEventBaru = async () => {
     alert("Berhasil!"); showSection('section-list-event-admin');
 };
 
-// --- LAIN-LAIN (Sama seperti logika sebelumnya) ---
-window.showSection = (id) => { document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); };
-window.changeMenu = (el, id) => { document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active')); el.classList.add('active'); showSection(id); };
-window.logout = () => signOut(auth).then(() => { localStorage.removeItem('pintuRole'); location.reload(); });
-
+// --- PENDAFTARAN & PEMBAYARAN ---
 window.simpanPendaftaran = async () => {
     const t = document.getElementById('selected-event').value;
     const qEv = query(collection(db, "events"), where("title", "==", t));
-    const evS = await getDocs(qEv); const evD = evS.docs[0];
+    const evS = await getDocs(qEv); 
+    const evD = evS.docs[0];
+    
+    if (evD.data().currentQuota <= 0) return alert("Mohon maaf, kuota event ini sudah penuh!");
+
     await addDoc(collection(db, "pendaftaran"), {
-        uid: auth.currentUser.uid, email: auth.currentUser.email,
-        nama: document.getElementById('reg-nama').value, nohp: document.getElementById('reg-nohp').value,
+        uid: auth.currentUser.uid, 
+        email: auth.currentUser.email,
+        nama: document.getElementById('reg-nama').value, 
+        nohp: document.getElementById('reg-nohp').value,
         instansi: document.getElementById('reg-instansi').value,
-        namaEvent: t, eventId: evD.id, harga: evD.data().price,
-        statusPembayaran: evD.data().price > 0 ? "Pending" : "Gratis", tglDaftar: new Date()
+        namaEvent: t, 
+        eventId: evD.id, 
+        harga: evD.data().price,
+        statusPembayaran: evD.data().price > 0 ? "Pending" : "Gratis", 
+        tglDaftar: new Date()
     });
+    
     await updateDoc(doc(db, "events", evD.id), { currentQuota: increment(-1) });
-    alert("Terdaftar!"); showSection('section-pendaftaran-saya');
+    alert("Pendaftaran Berhasil!"); 
+    showSection('section-pendaftaran-saya');
 };
 
 function listenMyRegistration(uid) {
@@ -166,50 +191,131 @@ function listenMyRegistration(uid) {
         const c = document.getElementById('list-pendaftaran-saya'); c.innerHTML = "";
         snap.forEach(d => {
             const r = d.data();
+            let cls = r.statusPembayaran === "Pending" ? "badge-pending" : (r.statusPembayaran === "Lunas" ? "badge-success" : "badge-waiting");
             c.innerHTML += `<div class="content-card" style="display:flex; justify-content:space-between; align-items:center;">
-                <div><strong>${r.namaEvent}</strong><br><small>${r.statusPembayaran}</small></div>
-                <div>${r.statusPembayaran==='Pending'?`<button class="btn-pay" onclick="openPaymentModal('${d.id}')">Pay</button>`:''}</div></div>`;
+                <div><strong>${r.namaEvent}</strong><br><small>Rp ${Number(r.harga).toLocaleString()} | </small><span class="badge ${cls}">${r.statusPembayaran}</span></div>
+                <div>${r.statusPembayaran==='Pending'?`<button class="btn-pay" onclick="openPaymentModal('${d.id}')">Bayar</button>`:''}</div></div>`;
         });
     });
 }
-window.openPaymentModal = (id) => { document.getElementById('pay-reg-id').value = id; document.getElementById('modal-payment').classList.remove('hidden'); };
-window.konfirmasiPembayaran = async () => {
-    await updateDoc(doc(db, "pendaftaran", document.getElementById('pay-reg-id').value), { statusPembayaran: "Menunggu Verifikasi", pengirim: document.getElementById('pay-sender-name').value });
-    alert("Terkirim!"); closeModal('modal-payment');
+
+window.openPaymentModal = (id) => { 
+    document.getElementById('pay-reg-id').value = id; 
+    document.getElementById('modal-payment').classList.remove('hidden'); 
 };
 
+// FUNGSI KONFIRMASI PEMBAYARAN (DENGAN UPLOAD FILE SS)
+window.konfirmasiPembayaran = async () => {
+    const fileInput = document.getElementById('pay-file');
+    const id = document.getElementById('pay-reg-id').value;
+
+    if (!id) return alert("Error: ID Pendaftaran tidak valid!");
+    if (fileInput.files.length === 0) return alert("Pilih file screenshot bukti transfer terlebih dahulu!");
+    
+    const file = fileInput.files[0];
+    if (file.size > 2 * 1024 * 1024) return alert("Ukuran file maksimal 2MB!");
+
+    const btnKirim = document.querySelector('#modal-payment .btn-primary');
+    btnKirim.innerText = "Mengirim Bukti...";
+    btnKirim.disabled = true;
+
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+        try {
+            await updateDoc(doc(db, "pendaftaran", id), { 
+                statusPembayaran: "Menunggu Verifikasi", 
+                buktiGambar: e.target.result 
+            });
+            alert("Bukti pembayaran berhasil dikirim!"); 
+            closeModal('modal-payment'); 
+            fileInput.value = "";
+        } catch (err) { 
+            alert("Gagal: " + err.message); 
+        } finally {
+            btnKirim.innerText = "Kirim Bukti";
+            btnKirim.disabled = false;
+        }
+    };
+    reader.readAsDataURL(file);
+};
+
+// --- ADMIN MONITORING ---
 function listenAdminData() {
     onSnapshot(collection(db, "pendaftaran"), (s) => {
         const t = document.getElementById('admin-table-body'); t.innerHTML = "";
         s.forEach(d => {
-            const i = d.data(); const isW = i.statusPembayaran === "Menunggu Verifikasi";
-            t.innerHTML += `<tr><td>${i.nama}</td><td>${i.statusPembayaran}</td><td>${i.pengirim||'-'}</td><td>${i.namaEvent}</td>
-            <td>${isW?`<button class="btn-pay" onclick="verif('${d.id}')">Verif</button>`:'-'}</td></tr>`;
+            const i = d.data(); 
+            const isW = i.statusPembayaran === "Menunggu Verifikasi";
+            const btnBukti = i.buktiGambar ? `<a href="${i.buktiGambar}" target="_blank" style="color:var(--primary); font-weight:bold;">Lihat SS</a>` : '-';
+            
+            t.innerHTML += `<tr>
+                <td>${i.nama}</td>
+                <td><span class="badge ${i.statusPembayaran==='Lunas'?'badge-success':(i.statusPembayaran==='Pending'?'badge-pending':'badge-waiting')}">${i.statusPembayaran}</span></td>
+                <td>${btnBukti}</td>
+                <td>${i.namaEvent}</td>
+                <td>${isW ? `<button class="btn-pay" onclick="verif('${d.id}')">Verif</button>` : '-'}</td>
+            </tr>`;
         });
     });
 }
-window.verif = async (id) => { if(confirm("Verifikasi Lunas?")) await updateDoc(doc(db, "pendaftaran", id), { statusPembayaran: "Lunas" }); };
+
+window.verif = async (id) => { 
+    if(confirm("Verifikasi data ini sebagai LUNAS?")) {
+        await updateDoc(doc(db, "pendaftaran", id), { statusPembayaran: "Lunas" });
+        alert("Status berhasil diubah menjadi Lunas!");
+    }
+};
+
+// --- UTILS & PROFILE ---
+window.showSection = (id) => { document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); };
+window.changeMenu = (el, id) => { document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active')); el.classList.add('active'); showSection(id); };
+window.logout = () => signOut(auth).then(() => { localStorage.removeItem('pintuRole'); location.reload(); });
+
+async function loadUserProfile(u) {
+    const d = await getDoc(doc(db, "users", u));
+    if(d.exists()) { 
+        document.getElementById('prof-nama').value = d.data().nama || ""; 
+        document.getElementById('prof-nohp').value = d.data().nohp || ""; 
+        document.getElementById('prof-instansi').value = d.data().instansi || ""; 
+    }
+}
+
+window.simpanProfil = async () => { 
+    await setDoc(doc(db, "users", auth.currentUser.uid), { 
+        nama: document.getElementById('prof-nama').value, 
+        nohp: document.getElementById('prof-nohp').value, 
+        instansi: document.getElementById('prof-instansi').value 
+    }, { merge: true }); 
+    alert("Profil berhasil diperbarui!"); 
+};
 
 function listenAdminEventList() {
     onSnapshot(collection(db, "events"), (snap) => {
         const c = document.getElementById('admin-event-list-container'); c.innerHTML = "";
         snap.forEach(d => {
             const ev = d.data(); const clr = ev.status === 'aktif' ? '#10b981' : '#ef4444';
-            c.innerHTML += `<div class="content-card" style="display:flex; justify-content:space-between; border-left:5px solid ${clr}">
-                <div><strong>${ev.title}</strong><br><small>Sisa: ${ev.currentQuota}/${ev.maxQuota}</small></div>
-                <div><button class="btn-ghost" onclick="prepareEditEvent('${d.id}')">Edit</button></div></div>`;
+            c.innerHTML += `<div class="content-card" style="display:flex; justify-content:space-between; align-items:center; border-left:5px solid ${clr}">
+                <div><strong>${ev.title}</strong><br><small>Sisa: ${ev.currentQuota}/${ev.maxQuota} | Status: ${ev.status}</small></div>
+                <div>
+                    <button class="btn-ghost" onclick="prepareEditEvent('${d.id}')">Edit</button>
+                    <button class="btn-ghost" style="color:${clr}" onclick="toggleStatus('${d.id}', '${ev.status}')">${ev.status === 'aktif' ? 'Selesai' : 'Aktif'}</button>
+                </div></div>`;
         });
     });
 }
+
 window.prepareEditEvent = async (id) => {
     const d = await getDoc(doc(db, "events", id)); const ev = d.data();
-    document.getElementById('edit-event-id').value = id; document.getElementById('ev-title').value = ev.title;
-    document.getElementById('ev-quota').value = ev.maxQuota; document.getElementById('ev-desc').value = ev.desc;
-    document.getElementById('ev-loc').value = ev.loc; document.getElementById('ev-time').value = ev.time;
-    document.getElementById('ev-price').value = ev.price; showSection('section-tambah-event');
+    document.getElementById('edit-event-id').value = id; 
+    document.getElementById('ev-title').value = ev.title;
+    document.getElementById('ev-quota').value = ev.maxQuota; 
+    document.getElementById('ev-desc').value = ev.desc;
+    document.getElementById('ev-loc').value = ev.loc; 
+    document.getElementById('ev-time').value = ev.time;
+    document.getElementById('ev-price').value = ev.price; 
+    showSection('section-tambah-event');
 };
-async function loadUserProfile(u) {
-    const d = await getDoc(doc(db, "users", u));
-    if(d.exists()) { document.getElementById('prof-nama').value = d.data().nama; document.getElementById('prof-nohp').value = d.data().nohp; document.getElementById('prof-instansi').value = d.data().instansi; }
-}
-window.simpanProfil = async () => { await setDoc(doc(db, "users", auth.currentUser.uid), { nama: document.getElementById('prof-nama').value, nohp: document.getElementById('prof-nohp').value, instansi: document.getElementById('prof-instansi').value }, { merge: true }); alert("Updated!"); };
+
+window.toggleStatus = async (id, s) => {
+    await updateDoc(doc(db, "events", id), { status: s === 'aktif' ? 'selesai' : 'aktif' });
+};
