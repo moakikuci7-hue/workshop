@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EventHub Pro - Platform Workshop</title>
+    <title>EventHub Pro - Workshop Firebase</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { --sidebar-bg: #1e293b; --sidebar-hover: #334155; --primary: #3b82f6; --bg: #f8fafc; --text: #1e293b; }
@@ -49,6 +49,9 @@
         
         .badge { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
         .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-waiting { background: #dbeafe; color: #1e40af; }
+        .badge-success { background: #d1fae5; color: #065f46; }
         
         .hidden { display: none !important; }
         table { width: 100%; border-collapse: collapse; }
@@ -152,7 +155,7 @@
             <h2>Data Pendaftar</h2>
             <div class="content-card">
                 <table>
-                    <thead><tr><th>Nama</th><th>Status</th><th>Bukti</th><th>Event</th><th>Aksi</th></tr></thead>
+                    <thead><tr><th>Nama</th><th>Status</th><th>Bukti Transfer</th><th>Event</th><th>Aksi</th></tr></thead>
                     <tbody id="admin-table-body"></tbody>
                 </table>
             </div>
@@ -192,14 +195,18 @@
         </div>
     </div>
 
-    <!-- MODAL PAYMENT -->
+    <!-- MODAL PAYMENT (DENGAN UPLOAD FILE SS) -->
     <div id="modal-payment" class="modal hidden">
         <div class="modal-content">
             <h3>Konfirmasi Pembayaran</h3>
-            <p>BCA: 123-456-7890 (A/N Admin)</p>
-            <input type="text" id="pay-sender-name" placeholder="Nama Pengirim">
+            <p style="font-size: 13px; color: #64748b;">Transfer ke BCA: 123-456-7890 (A/N Admin)</p>
+            
+            <label>Upload Screenshot (SS) Bukti Transfer</label>
+            <input type="file" id="pay-file" accept="image/*" style="margin-bottom: 15px;">
+            
             <input type="hidden" id="pay-reg-id">
             <button class="btn-primary" onclick="konfirmasiPembayaran()" style="width: 100%;">Kirim Bukti</button>
+            <button class="btn-ghost" style="width: 100%; margin-top: 10px;" onclick="closeModal('modal-payment')">Batal</button>
         </div>
     </div>
 
